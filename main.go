@@ -11,5 +11,7 @@ func main() {
 		Handler: mux,
 	}
 	s.ListenAndServe()
+	mux.Handle("/", http.FileServer(http.Dir(".")))
+
 }
 
