@@ -19,6 +19,4 @@ func main() {
 	}
 	log.Printf("Serving files from %s on port:%s\n", filePathRoot, port)
 	log.Fatal(srv.ListenAndServe())
-	//up to here
 }
-
