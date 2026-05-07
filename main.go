@@ -10,13 +10,10 @@ func main() {
 		filePathRoot = "."
 		port = "8080"
 	)
+	apiCfg := apiConfig{}
 	mux := http.NewServeMux() //type: *http.ServeMux
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filePathRoot))))
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK")) //converting string "OK" to a slice of bytes
-	})
+	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	srv := &http.Server{ //type http.Server
 		Addr: ":" + port,
@@ -25,5 +22,11 @@ func main() {
 	log.Printf("Serving files from %s on port:%s\n", filePathRoot, port)
 	log.Fatal(srv.ListenAndServe())
 	//anything after this line will not work as the previous line blocks
-
 }
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK))) 
+}
+
