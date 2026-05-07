@@ -14,6 +14,8 @@ func main() {
 	mux := http.NewServeMux() //type: *http.ServeMux
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
 	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("/metrics", apiCfg.apiHandler)
+	mux.HandleFunc("/reset", apiCfg.reset)
 
 	srv := &http.Server{ //type http.Server
 		Addr: ":" + port,
@@ -25,7 +27,7 @@ func main() {
 }
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(http.StatusText(http.StatusOK))) 
 }
