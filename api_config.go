@@ -20,10 +20,10 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 func (cfg *apiConfig) apiHandler(w http.ResponseWriter,  _ *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Hits: %d", cfg.fileserverHits.Load())
+	fmt.Fprintf(w, "Hits: %d\n", cfg.fileserverHits.Load())
 }
 
 func (cfg *apiConfig) reset(w http.ResponseWriter, _ *http.Request) {
 	cfg.fileserverHits.Store(0)
-	fmt.Fprintf(w, "Hits: %d", cfg.fileserverHits.Load())
+	fmt.Fprintf(w, "Hits: %d\n", cfg.fileserverHits.Load())
 }
