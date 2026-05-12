@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 )
@@ -16,6 +17,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.apiHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.reset)
+	mux.HandleFunc("POST /api/validate_chirp", validate_chirp)
 
 	srv := &http.Server{ //type http.Server
 		Addr: ":" + port,
@@ -25,6 +27,4 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 	//anything after this line will not work as the previous line blocks
 }
-
-
 
