@@ -1,11 +1,12 @@
 package main
+
 import (
 	"encoding/json"
-	"net/http"
 	"log"
+	"net/http"
 )
 
-var minChirpLength = 140
+var maxChirpLength = 140
 
 type chirpData struct {
 	Content string `json:"body"`
@@ -20,20 +21,13 @@ type chirpValid struct {
 }
 
 func respondWithError(w http.ResponseWriter, code int, errorMsg string) {
-	//encode errorMsg into JSON here
-	chirpErrorMsg := &chirpError{
+	payload := &chirpError{
 		ChirpError: errorMsg,
 	}
-	data, err := json.Marshal(chirpErrorMsg) 
-	if err != nil {
-		log.Printf("unable to encode chirp error: %v", err)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(data)
+	respondWithJSON(w, code, payload)
 }
 
-func respondWithJSON (w http.ResponseWriter, code int, payload interface{}) {
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("unable to encode valid chirp response: %v", err)
@@ -43,7 +37,7 @@ func respondWithJSON (w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(data)
 }
 
-func validate_chirp(w http.ResponseWriter, r *http.Request) {
+func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	//decode request
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
@@ -53,15 +47,12 @@ func validate_chirp(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "unable to decode request")
 		return
 	}
-	
 	//handle request depending on length
-	if len(chirp.Content) > minChirpLength {
-		respondWithError(w , http.StatusBadRequest, "Chirp is too long")
-		return //is this return necessary???
-	} else {
-		respondWithJSON(w, http.StatusOK, chirpValid{
-			ChirpValid: true,
-		})
+	if len(chirp.Content) > maxChirpLength {
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
+		return
 	}
-
+	respondWithJSON(w, http.StatusOK, chirpValid{
+		ChirpValid: true,
+	})
 }
