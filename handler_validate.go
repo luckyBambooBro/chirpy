@@ -13,10 +13,9 @@ type chirpData struct {
 
 func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	const maxChirpLength = 140
-
-
+	
 	type chirpValid struct {
-	ChirpValid bool `json:"valid"`
+	CleanedBody string `json:"cleaned_body"`
 	}
 
 	//decode request
@@ -25,7 +24,7 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	chirp := &chirpData{}
 	if err := decoder.Decode(chirp); err != nil {
 		log.Printf("Error decoding request: %v", err)
-		respondWithError(w, http.StatusInternalServerError, "unable to decode request")
+		respondWithError(w, http.StatusInternalServerError, "unable to decode request\n")
 		return
 	}
 	//handle request depending on length
@@ -34,8 +33,10 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
+	//filter and return valid chirp
+	filteredChirp := filterProfanities(*chirp).Content
 	respondWithJSON(w, http.StatusOK, chirpValid{
-		ChirpValid: true,
+		CleanedBody: filteredChirp,
 	})
 }
 
@@ -49,6 +50,7 @@ func filterProfanities (c chirpData) chirpData {
 	words := strings.Split(c.Content, " ")
 	censor := "****"
 
+	//filter 
 	for i, word := range words {
 		wordLower := strings.ToLower(word)
 		if _, ok := profanities[wordLower]; ok {
