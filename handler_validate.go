@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
+
+type chirpData struct {
+	Content string `json:"body"`
+}
 
 func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	const maxChirpLength = 140
 
-	type chirpData struct {
-	Content string `json:"body"`
-	}
+
 	type chirpValid struct {
 	ChirpValid bool `json:"valid"`
 	}
@@ -34,4 +37,29 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, chirpValid{
 		ChirpValid: true,
 	})
+}
+
+func filterProfanities (c chirpData) chirpData {
+	//variables
+	profanities := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert": {},
+		"fornax": {},
+	}
+	words := strings.Split(c.Content, " ")
+	censor := "****"
+
+	for i, word := range words {
+		wordLower := strings.ToLower(word)
+		if _, ok := profanities[wordLower]; ok {
+			words[i] = censor
+		}
+	}
+
+	censoredText := strings.Join(words, " ")
+
+	return chirpData{
+		Content: censoredText,
+	}
+
 }
