@@ -12,7 +12,7 @@ import (
 func TestHandlerChirpsValidate(t *testing.T) {
 
 	//requestCases
-	testStrings := []struct{
+	testCases := []struct{
 		name string
 		inputBody string
 		expectedStatus int
@@ -24,38 +24,37 @@ func TestHandlerChirpsValidate(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedJSON: `{"cleaned_body": "whatever trevor dawg"}`,
 		},
+			{
+			name: "standard string",
+			inputBody: `{"body": "what in the kerfuffle is that!"}`,
+			expectedStatus: http.StatusOK,
+			expectedJSON: `{"cleaned_body": "what in the **** is that!"}`,
+		},
 	}
 
-	var requestCases []*http.Request
-	for _, testString := range testStrings {
-		requestCases = append(
-			requestCases, httptest.NewRequestWithContext(
+	for _, tc := range testCases {
+			r := httptest.NewRequestWithContext(
 				context.Background(), 
 				http.MethodPost, 
-				"/api/validate_path", 
-				strings.NewReader(testString.inputBody),
-			),
-		) 
-		//context.Background better here cos if we do context.WithTimeOut and one fails, the same ctx is passed around and the rest of the test case will fail
-	}
-
-	for i, requestCase := range requestCases {
-		w := httptest.NewRecorder()
-
-		handlerChirpsValidate(w, requestCase) 
+				"/api/validate_chirp",
+				strings.NewReader(tc.inputBody),
+				)
+			w := httptest.NewRecorder()
+		handlerChirpsValidate(w, r)
 		resp := w.Result()
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", resp.StatusCode)
+			t.Errorf("expected status: %v\nactual status: %v\n", http.StatusOK, resp.StatusCode)
 		}
-
 		bodyText, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatalf("unable to read resp.body: %v", err)
 		}
-		if string(bodyText) != testStrings[i].expectedJSON {
-			t.Errorf("w.Body does not match Request Body:\n w.Body: %v\n request body: %v\n", bodyText, testStrings[i])
+		resp.Body.Close()
+		actualStr := strings.TrimSpace(string(bodyText))
+		expectedStr := strings.TrimSpace(tc.expectedJSON)
+		
+		if actualStr != expectedStr {
+			t.Errorf("JSON body mismatch\nactual: %v, expected: %v", actualStr, expectedStr)
 		}
-			
 	}
-
 }
