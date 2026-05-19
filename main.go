@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,10 @@ import (
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL) 
+	if err != nil {
+		log.Fatalf("error opening database: %v", err)
+	}
 
 	const (
 		filePathRoot = "."
