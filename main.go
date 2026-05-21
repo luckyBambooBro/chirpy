@@ -46,3 +46,11 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 	//anything after this line will not work as the previous line blocks
 }
+
+func returnErrorMsg(w http.ResponseWriter, code int) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(code)
+		if _, err := w.Write([]byte("Server Error")); err != nil {
+			log.Println(err)
+		}
+}
