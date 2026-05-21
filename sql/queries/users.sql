@@ -6,3 +6,6 @@ VALUES(
     NOW(),
     $1
 ) RETURNING *;
+
+-- name: DeletAllUsers :exec
+DELETE FROM users;

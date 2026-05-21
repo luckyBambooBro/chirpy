@@ -28,14 +28,15 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	if err := decoder.Decode(requestData); err != nil {
 
 		log.Printf("error decoding request to create user: %v", err)
-		returnErrorMsg(w)
+		returnErrorMsg(w, http.StatusInternalServerError)
 		return
 	}
 	//create user
 	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
 	if err != nil {
 		log.Printf("error creating user: %v", err)
-		returnErrorMsg(w)
+		returnErrorMsg(w, http.StatusInternalServerError)
+		return
 	}
 
 	user := User{
@@ -48,6 +49,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	data, err := json.Marshal(user)
 	if err != nil {
 		log.Printf("error encoding user data: %v", err)
+		return
 	}
 
 	//return data in json object
@@ -59,9 +61,9 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 }
 
-func returnErrorMsg(w http.ResponseWriter) {
+func returnErrorMsg(w http.ResponseWriter, code int) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(code)
 		if _, err := w.Write([]byte("Server Error")); err != nil {
 			log.Println(err)
 		}
