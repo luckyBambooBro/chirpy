@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/luckyBambooBro/chirpy/internal/database"
+	//"github.com/luckyBambooBro/chirpy/internal/database"
 )
 
 type User struct {
