@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/luckyBambooBro/chirpy/internal/database"
 	_ "github.com/lib/pq"
+	"github.com/luckyBambooBro/chirpy/internal/database"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	if dbURL == "" {
 		log.Fatalf("%v must be set", dbURL)
 	}
-	dbConn, err := sql.Open("postgres", dbURL) 
+	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("error opening database: %v", err)
 	}
@@ -33,7 +33,7 @@ func main() {
 	mux := http.NewServeMux() //type: *http.ServeMux
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
-	mux.HandleFunc("GET /admin/metrics", apiCfg.apiHandler)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.reset)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
@@ -48,9 +48,9 @@ func main() {
 }
 
 func returnErrorMsg(w http.ResponseWriter, code int) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(code)
-		if _, err := w.Write([]byte("Server Error")); err != nil {
-			log.Println(err)
-		}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(code)
+	if _, err := w.Write([]byte("Server Error")); err != nil {
+		log.Println(err)
+	}
 }
