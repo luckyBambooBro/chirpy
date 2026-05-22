@@ -28,14 +28,14 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	if err := decoder.Decode(requestData); err != nil {
 
 		log.Printf("error decoding request to create user: %v", err)
-		returnErrorMsg(w, http.StatusInternalServerError)
+		returnErrorMsg(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	//create user
 	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
 	if err != nil {
 		log.Printf("error creating user: %v", err)
-		returnErrorMsg(w, http.StatusInternalServerError)
+		returnErrorMsg(w, http.StatusInternalServerError,  "internal server error")
 		return
 	}
 

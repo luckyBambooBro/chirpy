@@ -29,6 +29,7 @@ func main() {
 	)
 	apiCfg := apiConfig{
 		db: dbQueries,
+		platform: os.Getenv("PLATFORM"),
 	}
 	mux := http.NewServeMux() //type: *http.ServeMux
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
@@ -47,10 +48,10 @@ func main() {
 	//anything after this line will not work as the previous line blocks
 }
 
-func returnErrorMsg(w http.ResponseWriter, code int) {
+func returnErrorMsg(w http.ResponseWriter, code int, errorMsg string) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(code)
-	if _, err := w.Write([]byte("Server Error")); err != nil {
+	if _, err := w.Write([]byte(errorMsg)); err != nil {
 		log.Println(err)
 	}
 }
