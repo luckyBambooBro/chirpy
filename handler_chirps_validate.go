@@ -11,17 +11,10 @@ import (
 
 type chirpData struct {
 	Content string `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
 func handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
-	const maxChirpLength = 140
-
-	type chirpValid struct {
-		CleanedBody string `json:"cleaned_body"`
-		UserID uuid.UUID `json:"user_id"`
-	}
-
-	//decode request
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	chirp := &chirpData{}
@@ -30,17 +23,24 @@ func handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "unable to decode request\n", err)
 		return
 	}
+
+	chirp = validateChirp(w, chirp)
+
+
+}
+
+func validateChirp(w http.ResponseWriter, chirp *chirpData) *chirpData {
+	const maxChirpLength = 140
+
 	//handle request depending on length
 	if len(chirp.Content) > maxChirpLength {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return
+		return nil
 	}
 
 	//filter and return valid chirp
-	filteredChirp := filterProfanities(chirp).Content
-	respondWithJSON(w, http.StatusOK, chirpValid{
-		CleanedBody: filteredChirp,
-	})
+	filteredChirp := filterProfanities(chirp)
+	return filteredChirp
 }
 
 func filterProfanities(c *chirpData) *chirpData {
@@ -66,5 +66,4 @@ func filterProfanities(c *chirpData) *chirpData {
 	return &chirpData{
 		Content: censoredText,
 	}
-
 }

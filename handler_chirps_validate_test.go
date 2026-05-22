@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TesthandlerChirpsCreate(t *testing.T) {
+func TestHandlerChirpsCreate(t *testing.T) {
 
 	//requestCases
 	testCases := []struct {
