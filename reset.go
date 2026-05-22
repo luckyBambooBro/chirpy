@@ -8,15 +8,15 @@ import (
 
 func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
-		returnErrorMsg(w, http.StatusForbidden, "reset forrbidden")
+		respondWithError(w, http.StatusForbidden, "reset is only allowed in dev environment", nil)
 		return
 	}
 	if err := cfg.db.DeleteAllUsers(r.Context()); err != nil {
-		log.Printf("error deleting users: %v", err)
-		returnErrorMsg(w, http.StatusInternalServerError, "internal server error")
+		log.Printf("Failed to reset the database: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "internal server error", err)
 		return
 	}
 	cfg.fileserverHits.Store(0)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Hits: %d\n", cfg.fileserverHits.Load())
+	fmt.Fprint(w, "Hits reset to 0 and datbase reset to initial state")
 }

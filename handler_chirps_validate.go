@@ -5,17 +5,20 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type chirpData struct {
 	Content string `json:"body"`
 }
 
-func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
+func handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	const maxChirpLength = 140
-	
+
 	type chirpValid struct {
-	CleanedBody string `json:"cleaned_body"`
+		CleanedBody string `json:"cleaned_body"`
+		UserID uuid.UUID `json:"user_id"`
 	}
 
 	//decode request
@@ -24,33 +27,33 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 	chirp := &chirpData{}
 	if err := decoder.Decode(chirp); err != nil {
 		log.Printf("Error decoding request: %v", err)
-		respondWithError(w, http.StatusInternalServerError, "unable to decode request\n")
+		respondWithError(w, http.StatusInternalServerError, "unable to decode request\n", err)
 		return
 	}
 	//handle request depending on length
 	if len(chirp.Content) > maxChirpLength {
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return
 	}
-	
+
 	//filter and return valid chirp
-	filteredChirp := filterProfanities(*chirp).Content
+	filteredChirp := filterProfanities(chirp).Content
 	respondWithJSON(w, http.StatusOK, chirpValid{
 		CleanedBody: filteredChirp,
 	})
 }
 
-func filterProfanities (c chirpData) chirpData {
+func filterProfanities(c *chirpData) *chirpData {
 	//variables
 	profanities := map[string]struct{}{
 		"kerfuffle": {},
-		"sharbert": {},
-		"fornax": {},
+		"sharbert":  {},
+		"fornax":    {},
 	}
 	words := strings.Split(c.Content, " ")
 	censor := "****"
 
-	//filter 
+	//filter
 	for i, word := range words {
 		wordLower := strings.ToLower(word)
 		if _, ok := profanities[wordLower]; ok {
@@ -60,7 +63,7 @@ func filterProfanities (c chirpData) chirpData {
 
 	censoredText := strings.Join(words, " ")
 
-	return chirpData{
+	return &chirpData{
 		Content: censoredText,
 	}
 

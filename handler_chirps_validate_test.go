@@ -9,39 +9,39 @@ import (
 	"testing"
 )
 
-func TestHandlerChirpsValidate(t *testing.T) {
+func TesthandlerChirpsCreate(t *testing.T) {
 
 	//requestCases
-	testCases := []struct{
-		name string
-		inputBody string
+	testCases := []struct {
+		name           string
+		inputBody      string
 		expectedStatus int
-		expectedJSON string
+		expectedJSON   string
 	}{
 		{
-			name: "standard string",
-			inputBody: `{"body": "whatever trevor dawg"}`,
+			name:           "standard string",
+			inputBody:      `{"body": "whatever trevor dawg"}`,
 			expectedStatus: http.StatusOK,
-			expectedJSON: `{"cleaned_body":"whatever trevor dawg"}`,
+			expectedJSON:   `{"cleaned_body":"whatever trevor dawg"}`,
 		},
-			{
-			name: "profanity string",
-			inputBody: `{"body": "what in the kerfuffle is that!"}`,
+		{
+			name:           "profanity string",
+			inputBody:      `{"body": "what in the kerfuffle is that!"}`,
 			expectedStatus: http.StatusOK,
-			expectedJSON: `{"cleaned_body":"what in the **** is that!"}`,
+			expectedJSON:   `{"cleaned_body":"what in the **** is that!"}`,
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T){
+		t.Run(tc.name, func(t *testing.T) {
 			r := httptest.NewRequestWithContext(
-			context.Background(), 
-			http.MethodPost, 
-			"/api/validate_chirp",
-			strings.NewReader(tc.inputBody),
+				context.Background(),
+				http.MethodPost,
+				"/api/validate_chirp",
+				strings.NewReader(tc.inputBody),
 			)
 			w := httptest.NewRecorder()
-				handlerChirpsValidate(w, r)
+			handlerChirpsCreate(w, r)
 			resp := w.Result()
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("expected status: %v\nactual status: %v\n", http.StatusOK, resp.StatusCode)
@@ -53,10 +53,10 @@ func TestHandlerChirpsValidate(t *testing.T) {
 			resp.Body.Close()
 			actualStr := strings.TrimSpace(string(bodyText))
 			expectedStr := strings.TrimSpace(tc.expectedJSON)
-			
+
 			if actualStr != expectedStr {
 				t.Errorf("JSON body mismatch\nactual: %q, expected: %q", actualStr, expectedStr)
 			}
-		})	
+		})
 	}
 }
