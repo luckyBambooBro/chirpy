@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/luckyBambooBro/chirpy/internal/database"
 	"github.com/google/uuid"
@@ -13,6 +14,14 @@ import (
 type chirpData struct {
 	Content string `json:"body"`
 	UserID uuid.UUID `json:"user_id"`
+}
+
+type chirpSQL struct {
+	ID uuid.UUID `json:"id"`
+    Created_at time.Time `json:"createdAt"`
+    Updated_at time.Time `json:"updatedAt"`
+    Body string `json:"body"`
+    User_id uuid.UUID `json:"user_id"`
 }
 
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
@@ -26,19 +35,28 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	}
 
 	chirp = validateChirp(w, chirp)
+	if chirp == nil {
+		return
+	}
 	chirpParams := database.CreateChirpParams{
 		Body: chirp.Content,
 		UserID: chirp.UserID,
 	}
 
-	chirpSQL, err := cfg.db.CreateChirp(r.Context(), chirpParams)
+	chirpCreate, err := cfg.db.CreateChirp(r.Context(), chirpParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "unable to create chirp on database", err)
 		return
 	}
-
+	chirpJSON := chirpSQL{
+		ID: chirpCreate.ID,
+		Created_at: chirpCreate.CreatedAt,
+		Updated_at: chirpCreate.UpdatedAt,
+		Body: chirpCreate.Body,
+		User_id: chirp.UserID,
+	}
 	//if successfully created, return the values to user
-	respondWithJSON(w, http.StatusOK, chirpSQL)
+	respondWithJSON(w, http.StatusCreated, chirpJSON)
 }
 
 func validateChirp(w http.ResponseWriter, chirp *chirpData) *chirpData {
@@ -51,11 +69,11 @@ func validateChirp(w http.ResponseWriter, chirp *chirpData) *chirpData {
 	}
 
 	//filter and return valid chirp
-	filteredChirp := filterProfanities(chirp)
-	return filteredChirp
+	filterProfanities(chirp)
+	return chirp
 }
 
-func filterProfanities(c *chirpData) *chirpData {
+func filterProfanities(c *chirpData) {
 	//variables
 	profanities := map[string]struct{}{
 		"kerfuffle": {},
@@ -72,10 +90,7 @@ func filterProfanities(c *chirpData) *chirpData {
 			words[i] = censor
 		}
 	}
-
 	censoredText := strings.Join(words, " ")
-
-	return &chirpData{
-		Content: censoredText,
-	}
+	//update the contents of the chirpData
+	c.Content = censoredText
 }
