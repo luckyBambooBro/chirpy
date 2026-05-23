@@ -18,5 +18,5 @@ func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg.fileserverHits.Store(0)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "Hits reset to 0 and datbase reset to initial state")
+	fmt.Fprint(w, "Hits reset to 0 and database reset to initial state")
 }

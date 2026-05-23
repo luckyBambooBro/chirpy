@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/luckyBambooBro/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -14,7 +15,7 @@ type chirpData struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	chirp := &chirpData{}
@@ -25,8 +26,19 @@ func handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chirp = validateChirp(w, chirp)
+	chirpParams := database.CreateChirpParams{
+		Body: chirp.Content,
+		UserID: chirp.UserID,
+	}
 
+	chirpSQL, err := cfg.db.CreateChirp(r.Context(), chirpParams)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to create chirp on database", err)
+		return
+	}
 
+	//if successfully created, return the values to user
+	respondWithJSON(w, http.StatusOK, chirpSQL)
 }
 
 func validateChirp(w http.ResponseWriter, chirp *chirpData) *chirpData {
