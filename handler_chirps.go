@@ -95,6 +95,23 @@ func filterProfanities(c *chirpData) {
 	c.Content = censoredText
 }
 
-func handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
+	chirpsList, err := cfg.db.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to obtain chirps list", err)
+		return
+	}
 
+	chirpsJSONList := []chirpSQL{}
+	for _, chirp := range chirpsList {
+		chirpsJSONList = append(chirpsJSONList, chirpSQL{
+			ID: chirp.ID,
+			Created_at: chirp.CreatedAt,
+			Updated_at: chirp.UpdatedAt,
+			Body: chirp.Body,
+			User_id: chirp.UserID,
+		})
+	}
+
+	respondWithJSON(w, http.StatusOK, chirpsJSONList)
 }
