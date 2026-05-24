@@ -94,3 +94,7 @@ func filterProfanities(c *chirpData) {
 	//update the contents of the chirpData
 	c.Content = censoredText
 }
+
+func handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
+
+}
