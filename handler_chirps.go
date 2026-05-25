@@ -18,10 +18,10 @@ type chirpData struct {
 
 type chirpSQL struct {
 	ID uuid.UUID `json:"id"`
-    Created_at time.Time `json:"createdAt"`
-    Updated_at time.Time `json:"updatedAt"`
+    CreatedAt time.Time `json:"createdAt"`
+    UpdatedAt time.Time `json:"updatedAt"`
     Body string `json:"body"`
-    User_id uuid.UUID `json:"user_id"`
+    UserID uuid.UUID `json:"user_id"`
 }
 
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
@@ -50,10 +50,10 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	}
 	chirpJSON := chirpSQL{
 		ID: chirpCreate.ID,
-		Created_at: chirpCreate.CreatedAt,
-		Updated_at: chirpCreate.UpdatedAt,
+		CreatedAt: chirpCreate.CreatedAt,
+		UpdatedAt: chirpCreate.UpdatedAt,
 		Body: chirpCreate.Body,
-		User_id: chirp.UserID,
+		UserID: chirp.UserID,
 	}
 	//if successfully created, return the values to user
 	respondWithJSON(w, http.StatusCreated, chirpJSON)
@@ -96,7 +96,7 @@ func filterProfanities(c *chirpData) {
 }
 
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
-	chirpsList, err := cfg.db.GetChirps(r.Context())
+	chirpsList, err := cfg.db.GetChirpsAll(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "failed to obtain chirps list", err)
 		return
@@ -106,12 +106,38 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	for _, chirp := range chirpsList {
 		chirpsJSONList = append(chirpsJSONList, chirpSQL{
 			ID: chirp.ID,
-			Created_at: chirp.CreatedAt,
-			Updated_at: chirp.UpdatedAt,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
 			Body: chirp.Body,
-			User_id: chirp.UserID,
+			UserID: chirp.UserID,
 		})
 	}
 
 	respondWithJSON(w, http.StatusOK, chirpsJSONList)
+}
+
+func (cfg *apiConfig) handlerChirpsGetOne(w http.ResponseWriter, r *http.Request) {
+	chirpIDString := r.PathValue("chirpID")
+
+	chirpID, err := uuid.Parse(chirpIDString)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid chirpID provided", nil)
+		return
+	}
+	
+
+	chirp, err := cfg.db.GetChirp(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "unable to retrieve chirp from database", err)
+		return
+	}
+
+	chirpJSON := chirpSQL{
+		ID: chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body: chirp.Body,
+		UserID: chirp.UserID,
+	}
+	respondWithJSON(w, http.StatusOK, chirpJSON)
 }
