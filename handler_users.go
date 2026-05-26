@@ -24,8 +24,14 @@ type User struct {
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
-	requestData := decodeUserInput(w, r)
+	requestData, err := decodeUserInput(w, r)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error decoding request", err)
+		return
+	}
 	
+	//UP TO HERE: hash password before creating
+
 	//create user
 	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
 	if err != nil {
@@ -44,22 +50,23 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, http.StatusCreated, user)
 }
 
-func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
+//come back to this after updating handlerUsersCreate
+/*func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
 	requestData, err := decodeUserInput(w, r)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "couldn't decode parameters", err)
+		respondWithError(w, http.StatusBadRequest, "error decoding request", err)
+		return
 	}
-	//UP TO HERE. create query to get user by their email and then test their password
-	// using internal/auth/password.go functions
 }
+*/
 
 func decodeUserInput(w http.ResponseWriter, r *http.Request) (*userData, error) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 	requestData := &userData{}
 	if err := decoder.Decode(requestData); err != nil {
-		log.Printf("error decoding request to create user: %v", err)
+		log.Printf("error decoding user details: %v", err)
 		return nil, err
 	}
 	return requestData, nil
