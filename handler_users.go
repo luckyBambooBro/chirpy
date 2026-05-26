@@ -10,6 +10,11 @@ import (
 	//"github.com/luckyBambooBro/chirpy/internal/database"
 )
 
+type userData struct {
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}
+
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -18,19 +23,9 @@ type User struct {
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
-	type userData struct {
-		Email string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	defer r.Body.Close()
-	requestData := &userData{}
-	if err := decoder.Decode(requestData); err != nil {
-		log.Printf("error decoding request to create user: %v", err)
-		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters", err)
-		return
-	}
+	//use requestData to decode data into go struct
+	requestData := decodeUserInput(w, r)
+	
 	//create user
 	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
 	if err != nil {
@@ -47,4 +42,23 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	}
 
 	respondWithJSON(w, http.StatusCreated, user)
+}
+
+func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
+	//use requestData to decode data into go struct
+	requestData := decodeUserInput(w, r)
+	//UP TO HERE. create query to get user by their email and then test their password
+	// using internal/auth/password.go functions
+}
+
+func decodeUserInput(w http.ResponseWriter, r *http.Request) *userData{
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	requestData := &userData{}
+	if err := decoder.Decode(requestData); err != nil {
+		log.Printf("error decoding request to create user: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters", err)
+		return nil
+	}
+	return requestData
 }
