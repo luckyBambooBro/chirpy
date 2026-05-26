@@ -31,6 +31,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	}
 	
 	//UP TO HERE: hash password before creating
+	
 
 	//create user
 	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
