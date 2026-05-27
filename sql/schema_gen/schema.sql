@@ -7,7 +7,6 @@ CREATE TABLE users(
     hashed_password TEXT NOT NULL DEFAULT ''
 );
 
--- +goose Up
 CREATE TABLE chirps(
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL,

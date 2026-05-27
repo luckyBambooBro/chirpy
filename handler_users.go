@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	//"github.com/luckyBambooBro/chirpy/internal/database"
+	"github.com/luckyBambooBro/chirpy/internal/auth"
+	"github.com/luckyBambooBro/chirpy/internal/database"
 )
 
 type userData struct {
@@ -24,19 +25,26 @@ type User struct {
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
-	requestData, err := decodeUserInput(w, r)
+	requestData, err := decodeUserInput(r)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error decoding request", err)
+		respondWithError(w, http.StatusInternalServerError, "error decoding user details", err)
 		return
 	}
 	
-	//UP TO HERE: hash password before creating
-	
-
-	//create user
-	createUser, err := cfg.db.CreateUser(r.Context(), requestData.Email)
+	//hash the provided password before creating
+	requestData.Password, err = auth.HashPassword(requestData.Password)
 	if err != nil {
-		log.Printf("error creating user: %v", err)
+		log.Println(err)
+		respondWithError(w, http.StatusInternalServerError, "error hashing password", err)
+		return
+	}
+	//create user
+	userParams := database.CreateUserParams{
+		Email: requestData.Email,
+		HashedPassword: requestData.Password,
+	}
+	createUser, err := cfg.db.CreateUser(r.Context(), userParams)
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't create user", err)
 		return
 	}
@@ -52,17 +60,39 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 }
 
 //come back to this after updating handlerUsersCreate
-/*func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
-	requestData, err := decodeUserInput(w, r)
+	requestData, err := decodeUserInput(r)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "error decoding request", err)
 		return
 	}
-}
-*/
 
-func decodeUserInput(w http.ResponseWriter, r *http.Request) (*userData, error) {
+	//obtain the user
+	user, err := cfg.db.GetUserByEmail(r.Context(), requestData.Email)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
+		return
+	}
+	
+	//compare passwords
+
+	correctPassword, err := auth.CheckPasswordHash(requestData.Password, user.HashedPassword)
+	if !correctPassword {
+		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
+		return
+	}
+	respondWithJSON(w, http.StatusOK, User{
+		ID: user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email: user.Email,
+	})
+
+}
+
+
+func decodeUserInput(r *http.Request) (*userData, error) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 	requestData := &userData{}
