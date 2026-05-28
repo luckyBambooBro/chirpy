@@ -21,6 +21,11 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Password  string	`json:"-"`
+}
+
+type response struct {
+	User User
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +37,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	}
 	
 	//hash the provided password before creating
-	requestData.Password, err = auth.HashPassword(requestData.Password)
+	hashedPassword, err := auth.HashPassword(requestData.Password)
 	if err != nil {
 		log.Println(err)
 		respondWithError(w, http.StatusInternalServerError, "error hashing password", err)
@@ -41,7 +46,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	//create user
 	userParams := database.CreateUserParams{
 		Email: requestData.Email,
-		HashedPassword: requestData.Password,
+		HashedPassword: hashedPassword,
 	}
 	createUser, err := cfg.db.CreateUser(r.Context(), userParams)
 	if err != nil {
@@ -56,7 +61,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		Email:     createUser.Email,
 	}
 
-	respondWithJSON(w, http.StatusCreated, user)
+	respondWithJSON(w, http.StatusCreated, response{user})
 }
 
 //come back to this after updating handlerUsersCreate
@@ -82,12 +87,12 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, User{
+	respondWithJSON(w, http.StatusOK, response{User{
 		ID: user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
-	})
+	}})
 
 }
 
