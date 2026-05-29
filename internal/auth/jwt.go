@@ -12,10 +12,10 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 		jwt.SigningMethodHS256, 
 		jwt.RegisteredClaims{
 			Issuer: "chirpy-access",
-			IssuedAt: time.Now().UTC(), //wrap these in jwts wrapper
-			ExpiresAt: time.Now().UTC() + expiresIn, //wrap these in jwts wrapper
+			IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
 			Subject: userID.String(),
 		},
-	),
-
+	)
+	token.SignedString([]byte(tokenSecret))
 }
