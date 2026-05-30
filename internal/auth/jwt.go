@@ -17,5 +17,16 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 			Subject: userID.String(),
 		},
 	)
-	token.SignedString([]byte(tokenSecret))
+	return token.SignedString([]byte(tokenSecret)) //this returns a string which is the entire JWT
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+	claims := jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(
+		tokenstring, 
+		"claims", 
+		jwt.Keyfunc(func {
+			return tokenSecret,
+		}),
+	)
 }
