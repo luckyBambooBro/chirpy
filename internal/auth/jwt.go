@@ -24,9 +24,9 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claims := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenstring, 
-		"claims", 
-		jwt.Keyfunc(func {
-			return tokenSecret,
+		claims, 
+		jwt.Keyfunc(func (token *jwt.Token) (interface{}, error) {
+			return tokenString,
 		}),
 	)
 }
