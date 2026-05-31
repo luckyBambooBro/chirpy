@@ -23,6 +23,7 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claims := &jwt.RegisteredClaims{}
+	//parse token into claims
 	token, err := jwt.ParseWithClaims(
 		tokenString, 
 		claims, 
@@ -33,5 +34,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 			return []byte(tokenSecret), nil
 		}),
 	)
-	token.Claims.GetSubject()
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("error parsing token: %w", err)
+	}
+
+	if !token.Valid {
+		return uuid.Nil, fmt.Errorf("invalid token")
+	}
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("error parsing userID: %w", err)
+	}
+	return userID, nil
 }
