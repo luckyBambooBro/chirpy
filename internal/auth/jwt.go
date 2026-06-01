@@ -8,11 +8,13 @@ import (
 	"github.com/google/uuid"
 )
 
+const issuerName string = "chirpy-access" 
+
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256, 
 		jwt.RegisteredClaims{
-			Issuer: "chirpy-access",
+			Issuer: issuerName,
 			IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
 			Subject: userID.String(),
@@ -40,6 +42,13 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	if !token.Valid {
 		return uuid.Nil, fmt.Errorf("invalid token")
+	}
+	issuer, err := token.Claims.GetIssuer()
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to obtain issuer: %v", err)
+	}
+	if issuer != issuerName {
+		return uuid.Nil, fmt.Errorf("invalid issuer")
 	}
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
