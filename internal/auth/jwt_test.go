@@ -8,21 +8,20 @@ import (
 )	
 
 func TestJWT(t *testing.T) {
-	correctSecret, incorrectSecret := "asad-yrtv-regt-felg-jvwn", "thisIsTheWrongSecretToken"
+	defaultSecret := "asad-yrtv-regt-felg-jvwn"
 	userID := uuid.New()
 
-	type testUnit struct {
+	tests := []struct {
 		Name string
 		Uuid uuid.UUID
 		TokenSecret string
 		ExpireLimit time.Duration
-	}
-
-	correctCases := []testUnit{
+		WantErr bool
+	}{
 		{
 		Name: "General Test",
 		Uuid: userID,
-		TokenSecret: correctSecret,
+		TokenSecret: defaultSecret,
 		ExpireLimit: 3 * time.Second,
 		},
 		{
@@ -31,54 +30,39 @@ func TestJWT(t *testing.T) {
 		TokenSecret: "asad-yrtv-regt-felg-jvwn",
 		ExpireLimit: 5 * time.Second,
 		},
-	}
-
-	for _, tt := range correctCases {
-		t.Run(tt.Name, func(t *testing.T) {
-			jwt, err := MakeJWT(tt.Uuid, tt.TokenSecret, tt.ExpireLimit)
-			if err != nil {
-				t.Fatalf("error creating jwt: %q", err)
-			}
-
-			_, err = ValidateJWT(jwt, correctSecret)
-			if err != nil {
-				t.Fatalf("error validating jwt: %q", err)
-			}
-		})
-	}
-
-	incorrectCases := []testUnit {
 		{
 		Name: "Incorrect Secret Test",
 		Uuid: userID,
-		TokenSecret: incorrectSecret,
+		TokenSecret: "incorrectSecret",
 		ExpireLimit: 10 * time.Second,
+		WantErr: true,
 		},
 		{
 		Name: "Expired Test",
 		Uuid: userID,
-		TokenSecret: correctSecret,
+		TokenSecret: defaultSecret,
 		ExpireLimit: -1 * time.Second,
+		WantErr: true,
 		},
 		{
 		Name: "Empty Secret",
 		Uuid: userID,
 		TokenSecret: "",
 		ExpireLimit: 3 * time.Second,
+		WantErr: true,
 		},
-		
 	}
 
-	for _, tt := range incorrectCases {
+	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			jwt, err := MakeJWT(tt.Uuid, tt.TokenSecret, tt.ExpireLimit)
 			if err != nil {
-				t.Fatal("unable to create jwt")
+				t.Fatalf("unable to create jwt: %v", err)
 			}
 
-			_, err = ValidateJWT(jwt, correctSecret)
-			if err == nil {
-				t.Fatal("incorrect test case should not pass test")
+			_, err = ValidateJWT(jwt, defaultSecret)
+			if (err != nil) != tt.WantErr {
+				t.Fatalf("validateJWT err: %v\nWantErr: %v", err, tt.WantErr)
 			}
 		})
 	}
