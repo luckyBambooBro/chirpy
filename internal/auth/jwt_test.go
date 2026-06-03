@@ -11,7 +11,7 @@ func TestJWT(t *testing.T) {
 	defaultSecret := "asad-yrtv-regt-felg-jvwn"
 	userID := uuid.New()
 
-	tests := []struct {
+	cases := []struct {
 		Name string
 		Uuid uuid.UUID
 		TokenSecret string
@@ -53,7 +53,7 @@ func TestJWT(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			jwt, err := MakeJWT(tt.Uuid, tt.TokenSecret, tt.ExpireLimit)
 			if err != nil {

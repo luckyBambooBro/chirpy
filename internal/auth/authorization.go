@@ -12,7 +12,7 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", errors.New("no authorization information provided by request header")
 	}
 	authTextList := strings.Fields(authText)
-	if len(authTextList) < 2 {
+	if len(authTextList) != 2 {
 		return "", errors.New("invalid authorization header length")
 	}
 	if strings.ToLower(authTextList[0]) != "bearer" {
