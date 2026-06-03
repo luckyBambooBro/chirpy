@@ -90,12 +90,15 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//create jwt
-	expiry := time.Duration(requestData.ExpiresInSeconds)
+	expiry := time.Duration(requestData.ExpiresInSeconds) * time.Second
 	if expiry == time.Duration(0) || expiry > 1 * time.Hour {
 		expiry = 1 * time.Hour
 	}
 
 	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expiry)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not create token", err)
+	}
 
 	respondWithJSON(w, http.StatusOK, 
 		response{

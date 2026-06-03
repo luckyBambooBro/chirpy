@@ -24,6 +24,8 @@ type chirpSQL struct {
 }
 
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
+	
+	//decode request
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	chirp := &chirpData{}
@@ -45,7 +47,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-
+	//create chirp
 	chirp = validateChirp(w, chirp)
 	if chirp == nil {
 		return
@@ -60,6 +62,8 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		respondWithError(w, http.StatusInternalServerError, "unable to create chirp on database", err)
 		return
 	}
+
+	//respond to request
 	chirpJSON := chirpSQL{
 		ID: chirpCreate.ID,
 		CreatedAt: chirpCreate.CreatedAt,
