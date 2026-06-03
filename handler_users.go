@@ -14,6 +14,7 @@ import (
 type userData struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
+		ExpiresInSeconds int `json:"expires_in_seconds"`
 	}
 
 type User struct {
@@ -25,7 +26,8 @@ type User struct {
 }
 
 type response struct {
-	User User
+	User
+	Token string `json:"token"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
@@ -61,10 +63,10 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		Email:     createUser.Email,
 	}
 
-	respondWithJSON(w, http.StatusCreated, response{user})
+	respondWithJSON(w, http.StatusCreated, response{User: user})
 }
 
-//come back to this after updating handlerUsersCreate
+
 func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
 	requestData, err := decodeUserInput(r)
@@ -81,18 +83,31 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	//compare passwords
-
 	correctPassword, err := auth.CheckPasswordHash(requestData.Password, user.HashedPassword)
 	if !correctPassword {
 		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, response{User{
-		ID: user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email: user.Email,
-	}})
+
+	//create jwt
+	expiry := time.Duration(requestData.ExpiresInSeconds)
+	if expiry == time.Duration(0) || expiry > 1 * time.Hour {
+		expiry = 1 * time.Hour
+	}
+
+	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expiry)
+
+	respondWithJSON(w, http.StatusOK, 
+		response{
+			User: User{
+				ID: user.ID,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+				Email: user.Email,
+				},
+				Token: jwt,
+		},
+	)
 
 }
 

@@ -26,6 +26,10 @@ func main() {
 	if platform == "" {
 		log.Fatal("PLATFORM must be set")
 	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT secret must be set")
+	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -36,6 +40,7 @@ func main() {
 	apiCfg := apiConfig{
 		db:       dbQueries,
 		platform: platform,
+		jwtSecret: jwtSecret,
 	}
 	mux := http.NewServeMux() //type: *http.ServeMux
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
