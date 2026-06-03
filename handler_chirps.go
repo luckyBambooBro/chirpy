@@ -2,18 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/luckyBambooBro/chirpy/internal/auth"
 	"github.com/luckyBambooBro/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 type chirpData struct {
 	Content string `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
 }
 
 type chirpSQL struct {
@@ -29,10 +28,23 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	decoder := json.NewDecoder(r.Body)
 	chirp := &chirpData{}
 	if err := decoder.Decode(chirp); err != nil {
-		log.Printf("Error decoding request: %v", err)
 		respondWithError(w, http.StatusInternalServerError, "unable to decode request\n", err)
 		return
 	}
+
+	//authenticate user via JWT
+	userJWT, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unable to authenticate user", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(userJWT, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unable to authenticate user", err)
+		return
+	}
+
 
 	chirp = validateChirp(w, chirp)
 	if chirp == nil {
@@ -40,7 +52,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	}
 	chirpParams := database.CreateChirpParams{
 		Body: chirp.Content,
-		UserID: chirp.UserID,
+		UserID: userID,
 	}
 
 	chirpCreate, err := cfg.db.CreateChirp(r.Context(), chirpParams)
@@ -53,7 +65,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		CreatedAt: chirpCreate.CreatedAt,
 		UpdatedAt: chirpCreate.UpdatedAt,
 		Body: chirpCreate.Body,
-		UserID: chirp.UserID,
+		UserID: userID,
 	}
 	//if successfully created, return the values to user
 	respondWithJSON(w, http.StatusCreated, chirpJSON)
