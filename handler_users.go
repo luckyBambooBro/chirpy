@@ -110,7 +110,7 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error creating refreshToken on database", err)
 	}
-	
+
 
 	respondWithJSON(w, http.StatusOK, 
 		response{
@@ -121,6 +121,7 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 				Email: user.Email,
 				},
 				AccessToken: jwt,
+				RefreshToken: refreshTokenString,
 		},
 	)
 
