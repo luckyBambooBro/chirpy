@@ -96,11 +96,21 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//CREATE REFRESH TOKEN HERE 
-	refreshToken := auth.MakeRefreshToken()
-	if refreshToken == "" {
+	refreshTokenString := auth.MakeRefreshToken()
+	if refreshTokenString == "" {
 		respondWithError(w, http.StatusInternalServerError, "unable to create refresh token", nil)
 	}
 	//create token on database here
+	refreshTokenParams := database.CreateRefreshTokenParams{
+		Token: refreshTokenString,
+		UserID: user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+	}
+	refreshToken, err := cfg.db.CreateRefreshToken(r.Context(), refreshTokenParams)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error creating refreshToken on database", err)
+	}
+	
 
 	respondWithJSON(w, http.StatusOK, 
 		response{
