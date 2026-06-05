@@ -2,17 +2,16 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"log"
 )
 
-func MakeRefreshToken() string {
+func MakeRefreshToken() (string, error) {
 	randBytes := make([]byte, 32)
 	_, err := rand.Read(randBytes)
 	if err != nil {
 		log.Print("error creating randBytes for refresh token")
-		return ""
+		return "", err
 	}
-	encodedStr := hex.EncodeToString(randBytes)
+	return hex.EncodeToString(randBytes), nil
 
 }

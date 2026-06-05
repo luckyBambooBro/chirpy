@@ -26,9 +26,13 @@ type User struct {
 
 type response struct {
 	User
-	AccessToken string `json:"token"`
+	Token string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+//constants
+const jwtExpiry, refreshTokenExpiry = 1 * time.Hour, 60 * 24 * time.Hour
+
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
@@ -90,25 +94,28 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//create jwt
-	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, 1 * time.Hour)
+	jwt, err := auth.MakeJWT(user.ID, cfg.jwtSecret, jwtExpiry)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not create access token", err)
+		return
 	}
 
-	//CREATE REFRESH TOKEN HERE 
-	refreshTokenString := auth.MakeRefreshToken()
-	if refreshTokenString == "" {
+	//create refresh token
+	refreshTokenString, err := auth.MakeRefreshToken()
+	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "unable to create refresh token", nil)
+		return
 	}
 	//create token on database here
 	refreshTokenParams := database.CreateRefreshTokenParams{
 		Token: refreshTokenString,
 		UserID: user.ID,
-		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+		ExpiresAt: time.Now().Add(refreshTokenExpiry),
 	}
-	refreshToken, err := cfg.db.CreateRefreshToken(r.Context(), refreshTokenParams)
+	_, err = cfg.db.CreateRefreshToken(r.Context(), refreshTokenParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error creating refreshToken on database", err)
+		return
 	}
 
 
@@ -120,7 +127,7 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 				UpdatedAt: user.UpdatedAt,
 				Email: user.Email,
 				},
-				AccessToken: jwt,
+				Token: jwt,
 				RefreshToken: refreshTokenString,
 		},
 	)
