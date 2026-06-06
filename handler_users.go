@@ -31,8 +31,10 @@ type response struct {
 }
 
 //constants
-const jwtExpiry, refreshTokenExpiry = 1 * time.Hour, 60 * 24 * time.Hour
-
+const (
+	jwtExpiry = 1 * time.Hour
+	refreshTokenExpiry = 60 * 24 * time.Hour
+)
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	//use requestData to decode data into go struct
@@ -117,7 +119,6 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "error creating refreshToken on database", err)
 		return
 	}
-
 
 	respondWithJSON(w, http.StatusOK, 
 		response{
