@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -140,21 +141,48 @@ func (cfg *apiConfig) handlerUserRefresh(w http.ResponseWriter, r *http.Request)
 	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
+		return
 	}
 	if len(refreshToken) != 64 { //apparently len is 64 instead of 32 due to hex encoding (says gemini)
 		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
+		return
 	}
 
 	databaseRefreshToken, err := cfg.db.GetUserFromRefreshToken(r.Context(), refreshToken)
-	if err != nil...
-	if databaseRefreshToken.RevokedAt...
-	if databaseRefreshToken.ExpiresAt...
-	userID := databaseRefreshToken.UserID
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid access", err)
+		return
+	}
+	if time.Now().UTC().After(databaseRefreshToken.ExpiresAt) {
+		respondWithError(w, http.StatusUnauthorized, "unauthorized access - token revoked or expired", err)
+		return
+	}
 	
+	//if refresh token valid provide access token 
+	userID := databaseRefreshToken.UserID
+	accessToken, err := auth.MakeJWT(userID, cfg.jwtSecret, jwtExpiry)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not create access token", err)
+		return
+	}
 
+	respondWithJSON(w, http.StatusOK, 
+		struct{
+			Token string `json:"token"`} {
+				Token: accessToken, 
+			})
+	
 }
 
+func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
+		return
+	}
 
+	
+}
 
 //==========HELPER FUNCTIONS =================
 func decodeUserInput(r *http.Request) (*userData, error) {
