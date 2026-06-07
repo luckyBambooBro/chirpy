@@ -136,6 +136,27 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 
+func (cfg *apiConfig) handlerUserRefresh(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
+	}
+	if len(refreshToken) != 64 { //apparently len is 64 instead of 32 due to hex encoding (says gemini)
+		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
+	}
+
+	databaseRefreshToken, err := cfg.db.GetUserFromRefreshToken(r.Context(), refreshToken)
+	if err != nil...
+	if databaseRefreshToken.RevokedAt...
+	if databaseRefreshToken.ExpiresAt...
+	userID := databaseRefreshToken.UserID
+	
+
+}
+
+
+
+//==========HELPER FUNCTIONS =================
 func decodeUserInput(r *http.Request) (*userData, error) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
