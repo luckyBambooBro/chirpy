@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -174,14 +173,19 @@ func (cfg *apiConfig) handlerUserRefresh(w http.ResponseWriter, r *http.Request)
 	
 }
 
-func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r http.Request) {
+func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "unauthorized access", err)
 		return
 	}
 
-	
+	if err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error revoking refresh token", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent)
 }
 
 //==========HELPER FUNCTIONS =================
