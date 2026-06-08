@@ -172,7 +172,7 @@ func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken); err != nil {
+	if _, err = cfg.db.RevokeRefreshToken(r.Context(), refreshToken); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error revoking refresh token", err)
 		return
 	}
