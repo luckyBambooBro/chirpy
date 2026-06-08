@@ -37,15 +37,15 @@ const (
 )
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
-	//use requestData to decode data into go struct
-	requestData, err := decodeUserInput(r)
+	//use userData to decode data into go struct
+	userData, err := decodeUserInput(r)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error decoding user details", err)
+		respondWithError(w, http.StatusInternalServerError, "error decoding user request", err)
 		return
 	}
 	
 	//hash the provided password before creating
-	hashedPassword, err := auth.HashPassword(requestData.Password)
+	hashedPassword, err := auth.HashPassword(userData.Password)
 	if err != nil {
 		log.Println(err)
 		respondWithError(w, http.StatusInternalServerError, "error hashing password", err)
@@ -53,7 +53,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 	}
 	//create user
 	userParams := database.CreateUserParams{
-		Email: requestData.Email,
+		Email: userData.Email,
 		HashedPassword: hashedPassword,
 	}
 	createUser, err := cfg.db.CreateUser(r.Context(), userParams)
@@ -74,22 +74,22 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 
 func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
-	//use requestData to decode data into go struct
-	requestData, err := decodeUserInput(r)
+	//use userData to decode data into go struct
+	userData, err := decodeUserInput(r)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "error decoding request", err)
+		respondWithError(w, http.StatusBadRequest, "error decoding user request", err)
 		return
 	}
 
 	//obtain the user
-	user, err := cfg.db.GetUserByEmail(r.Context(), requestData.Email)
+	user, err := cfg.db.GetUserByEmail(r.Context(), userData.Email)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
 		return
 	}
 	
 	//compare passwords
-	correctPassword, err := auth.CheckPasswordHash(requestData.Password, user.HashedPassword)
+	correctPassword, err := auth.CheckPasswordHash(userData.Password, user.HashedPassword)
 	if !correctPassword {
 		respondWithError(w, http.StatusUnauthorized, "incorrect email or password", err)
 		return
@@ -179,14 +179,22 @@ func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (cfg *apiConfig) handlerUpdateEmailAndPassword(w http.ResponseWriter, r *http.Request) {
+	userData, err := decodeUserInput(r)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error decoding user request", err)
+	}
+	_, err = auth.ValidateJWT(r.Header.Get()) 
+}
+
 //==========HELPER FUNCTIONS =================
 func decodeUserInput(r *http.Request) (*userData, error) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
-	requestData := &userData{}
-	if err := decoder.Decode(requestData); err != nil {
-		log.Printf("error decoding user details: %v", err)
+	userData := &userData{}
+	if err := decoder.Decode(userData); err != nil {
+		log.Printf("error decoding user request: %v", err)
 		return nil, err
 	}
-	return requestData, nil
+	return userData, nil
 }
