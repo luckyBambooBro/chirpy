@@ -165,11 +165,7 @@ func (cfg *apiConfig) handlerUserRefresh(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, 
-		struct{
-			Token string `json:"token"`} {
-				Token: accessToken, 
-			})
+	respondWithJSON(w, http.StatusOK, response{Token: accessToken})
 	
 }
 
@@ -184,8 +180,7 @@ func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, http.StatusInternalServerError, "error revoking refresh token", err)
 		return
 	}
-
-	respondWithJSON(w, http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 //==========HELPER FUNCTIONS =================
