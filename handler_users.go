@@ -147,19 +147,15 @@ func (cfg *apiConfig) handlerUserRefresh(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	databaseRefreshToken, err := cfg.db.GetUserFromRefreshToken(r.Context(), refreshToken)
+	user, err := cfg.db.GetUserFromRefreshToken(r.Context(), refreshToken)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid access", err)
 		return
 	}
-	if time.Now().UTC().After(databaseRefreshToken.ExpiresAt) {
-		respondWithError(w, http.StatusUnauthorized, "unauthorized access - token revoked or expired", err)
-		return
-	}
+
 	
 	//if refresh token valid provide access token 
-	userID := databaseRefreshToken.UserID
-	accessToken, err := auth.MakeJWT(userID, cfg.jwtSecret, jwtExpiry)
+	accessToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, jwtExpiry)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not create access token", err)
 		return
