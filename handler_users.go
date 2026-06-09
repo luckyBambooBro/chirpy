@@ -182,9 +182,50 @@ func (cfg *apiConfig) handlerUserRevoke(w http.ResponseWriter, r *http.Request) 
 func (cfg *apiConfig) handlerUpdateEmailAndPassword(w http.ResponseWriter, r *http.Request) {
 	userData, err := decodeUserInput(r)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error decoding user request", err)
+		respondWithError(w, http.StatusBadRequest, "error decoding user request", err)
+		return
 	}
-	_, err = auth.ValidateJWT(r.Header.Get()) 
+
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "error retrieving bearer token", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unauthorised access", err)
+		return
+	}
+
+	//hash password into database
+	hashedPassword, err := auth.HashPassword(userData.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error hashing password", err)
+		return
+	}
+
+	updatedUser, err := cfg.db.UpdateEmailAndPassword(r.Context(), database.UpdateEmailAndPasswordParams{
+		HashedPassword: hashedPassword,
+		Email: userData.Email,
+		ID: userID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to update user details to database", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, response{
+		User: User{
+			ID: updatedUser.ID,
+			CreatedAt: updatedUser.CreatedAt,
+			UpdatedAt: updatedUser.UpdatedAt,
+			Email: updatedUser.Email,
+		},
+		Token: accessToken, //gemini: usually you would make a new JWT and send it back (more secure) but lesson doesnt ask for this
+	})
+
+	
 }
 
 //==========HELPER FUNCTIONS =================
