@@ -157,3 +157,7 @@ func (cfg *apiConfig) handlerChirpsGetOne(w http.ResponseWriter, r *http.Request
 	}
 	respondWithJSON(w, http.StatusOK, chirpJSON)
 }
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	
+}
