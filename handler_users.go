@@ -22,6 +22,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Password  string	`json:"-"`
+	IsChirpyRed    bool	`json:"is_chirpy_red"`
 }
 
 type response struct {
@@ -67,6 +68,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		CreatedAt: createUser.CreatedAt,
 		UpdatedAt: createUser.UpdatedAt,
 		Email:     createUser.Email,
+		IsChirpyRed: false,
 	}
 
 	respondWithJSON(w, http.StatusCreated, response{User: user})
@@ -127,6 +129,7 @@ func (cfg *apiConfig) handlerUserLogin(w http.ResponseWriter, r *http.Request) {
 				CreatedAt: user.CreatedAt,
 				UpdatedAt: user.UpdatedAt,
 				Email: user.Email,
+				IsChirpyRed: user.IsChirpyRed,
 				},
 				Token: jwt,
 				RefreshToken: refreshTokenString,
