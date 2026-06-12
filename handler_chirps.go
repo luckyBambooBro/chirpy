@@ -112,11 +112,30 @@ func filterProfanities(c *chirpData) {
 }
 
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
-	chirpsList, err := cfg.db.GetChirpsAll(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to obtain chirps list", err)
-		return
-	}
+	//check if query parameter requested
+	var chirpsList []database.Chirp
+	var err error
+	authID := r.URL.Query().Get("author_id")
+	if authID != "" {
+		userID, err := uuid.Parse(authID)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "invalid userID to get chirps", err)
+			return
+		}
+
+		chirpsList, err = cfg.db.GetChirpsFromUser(r.Context(), userID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "internal database error", err)
+			return
+		}
+
+	} else {
+		chirpsList, err = cfg.db.GetChirpsAll(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "failed to obtain chirps list", err)
+			return
+		}
+	}	
 
 	chirpsJSONList := []chirpSQL{}
 	for _, chirp := range chirpsList {

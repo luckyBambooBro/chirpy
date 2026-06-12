@@ -32,7 +32,7 @@ func main() {
 	}
 	polkaAPI := os.Getenv("POLKA_KEY")
 	if polkaAPI == "" {
-		log.Fatal("polkaAPI must be set")
+		log.Fatal("POLKA_KEY must be set")
 	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
