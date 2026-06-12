@@ -12,7 +12,7 @@ const upgradedString = "user.upgraded"
 type polkaWebhookRequest struct {
 	Event string `json:"event"`
 	Data  struct {
-		UserID string `json:"user_id"`
+		UserID uuid.UUID `json:"user_id"`
 	} `json:"data"`
 }
 
@@ -30,12 +30,7 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userUUID, err := uuid.Parse(polkaWebhookRequest.Data.UserID)
-	if err != nil {
-		respondWithError(w, http.StatusNotFound, "unable to parse user ID", err)
-		return
-	}
-	_, err = cfg.db.UpdateChirpyRed(r.Context(), userUUID)
+	_, err := cfg.db.UpgradeToChirpyRed(r.Context(), polkaWebhookRequest.Data.UserID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "unable to update user to chirpy red", err)
 		return

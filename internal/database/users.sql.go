@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -70,35 +69,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
-const updateChirpyRed = `-- name: UpdateChirpyRed :one
-UPDATE users
-SET is_chirpy_red = true,
-updated_at = NOW()
-WHERE id = $1
-RETURNING id, created_at, updated_at, email, is_chirpy_red
-`
-
-type UpdateChirpyRedRow struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Email       string
-	IsChirpyRed bool
-}
-
-func (q *Queries) UpdateChirpyRed(ctx context.Context, id uuid.UUID) (UpdateChirpyRedRow, error) {
-	row := q.db.QueryRowContext(ctx, updateChirpyRed, id)
-	var i UpdateChirpyRedRow
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Email,
-		&i.IsChirpyRed,
-	)
-	return i, err
-}
-
 const updateEmailAndPassword = `-- name: UpdateEmailAndPassword :one
 UPDATE users
 SET 
@@ -106,7 +76,7 @@ hashed_password = $1,
 email = $2,
 updated_at = NOW()
 WHERE id = $3
-RETURNING id, created_at, updated_at, email, hashed_password
+RETURNING id, created_at, updated_at, email, hashed_password, is_chirpy_red
 `
 
 type UpdateEmailAndPasswordParams struct {
@@ -115,23 +85,38 @@ type UpdateEmailAndPasswordParams struct {
 	ID             uuid.UUID
 }
 
-type UpdateEmailAndPasswordRow struct {
-	ID             uuid.UUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Email          string
-	HashedPassword string
-}
-
-func (q *Queries) UpdateEmailAndPassword(ctx context.Context, arg UpdateEmailAndPasswordParams) (UpdateEmailAndPasswordRow, error) {
+func (q *Queries) UpdateEmailAndPassword(ctx context.Context, arg UpdateEmailAndPasswordParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, updateEmailAndPassword, arg.HashedPassword, arg.Email, arg.ID)
-	var i UpdateEmailAndPasswordRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
+	)
+	return i, err
+}
+
+const upgradeToChirpyRed = `-- name: UpgradeToChirpyRed :one
+UPDATE users
+SET is_chirpy_red = true,
+updated_at = NOW()
+WHERE id = $1
+RETURNING id, created_at, updated_at, email, hashed_password, is_chirpy_red
+`
+
+func (q *Queries) UpgradeToChirpyRed(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, upgradeToChirpyRed, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }

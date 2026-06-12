@@ -68,7 +68,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		CreatedAt: createUser.CreatedAt,
 		UpdatedAt: createUser.UpdatedAt,
 		Email:     createUser.Email,
-		IsChirpyRed: false,
+		IsChirpyRed: createUser.IsChirpyRed,
 	}
 
 	respondWithJSON(w, http.StatusCreated, response{User: user})
