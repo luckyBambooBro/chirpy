@@ -30,6 +30,10 @@ func main() {
 	if jwtSecret == "" {
 		log.Fatal("JWT secret must be set")
 	}
+	polkaAPI := os.Getenv("POLKA_KEY")
+	if polkaAPI == "" {
+		log.Fatal("polkaAPI must be set")
+	}
 
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -41,6 +45,7 @@ func main() {
 		db:       dbQueries,
 		platform: platform,
 		jwtSecret: jwtSecret,
+		polkaAPI: polkaAPI,
 	}
 	mux := http.NewServeMux() //type: *http.ServeMux
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filePathRoot)))))
