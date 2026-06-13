@@ -151,15 +151,18 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 
 	//sorting goes here
 	sortSetting := r.URL.Query().Get("sort")
-	if sortSetting == "asc" || sortSetting == "" {
+	switch sortSetting {
+	case "":
+		fallthrough
+	case "asc":
 		sort.Slice(chirpsJSONList, func(i, j int) bool {
 			return chirpsJSONList[i].CreatedAt.Before(chirpsJSONList[j].CreatedAt)
 		})
-	} else if sortSetting == "desc" {
-				sort.Slice(chirpsJSONList, func(i, j int) bool {
+	case "desc":
+			sort.Slice(chirpsJSONList, func(i, j int) bool {
 			return chirpsJSONList[i].CreatedAt.After(chirpsJSONList[j].CreatedAt)
 		})
-	} 
+	}
 
 	respondWithJSON(w, http.StatusOK, chirpsJSONList)
 }
